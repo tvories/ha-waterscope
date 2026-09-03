@@ -1,0 +1,21 @@
+{
+  "domain": "waterscope",
+  "name": "Metron WaterScope",
+  "codeowners": [
+    "@tvories"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "recorder"
+  ],
+  "documentation": "https://github.com/tvories/ha-waterscope",
+  "integration_type": "hub",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/tvories/ha-waterscope/issues",
+  "loggers": [
+    "custom_components.waterscope"
+  ],
+  "quality_scale": "platinum",
+  "requirements": [],
+  "version": "0.3.0"
+}

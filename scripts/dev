@@ -1,0 +1,179 @@
+#!/usr/bin/env bash
+# Developer entry point for ha-waterscope. Run `scripts/dev help` for usage.
+set -euo pipefail
+
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+VENV="$REPO/.venv"
+PY="$VENV/bin/python"
+CONTAINER="ha-waterscope-test"
+IMAGE="ghcr.io/home-assistant/home-assistant:stable"
+PORT="${WATERSCOPE_DEV_PORT:-8123}"
+
+# Home Assistant's config lives OUTSIDE the repo on purpose: it stores your
+# WaterScope password in .storage/core.config_entries, which must never end up
+# in the git working tree.
+DEV_HOME="${WATERSCOPE_DEV_CONFIG:-${XDG_DATA_HOME:-$HOME/.local/share}/ha-waterscope-dev}"
+HACFG="$DEV_HOME/hacfg"
+
+# The API returns naive local wall-clock timestamps, so the container's zone
+# must match the meter's or every reading lands in the wrong hour.
+TZ_NAME="${WATERSCOPE_DEV_TZ:-$(cat /etc/timezone 2>/dev/null || echo America/Denver)}"
+
+say() { printf '\033[1;36m==>\033[0m %s\n' "$*"; }
+die() { printf '\033[1;31mError:\033[0m %s\n' "$*" >&2; exit 1; }
+
+need_docker() {
+  command -v docker >/dev/null 2>&1 || die "docker not found."
+  docker info >/dev/null 2>&1 || die \
+    "Docker is not reachable. On WSL, enable Docker Desktop → Settings → Resources → WSL Integration."
+}
+
+need_venv() {
+  [ -x "$PY" ] || die "No toolchain yet. Run: scripts/dev setup"
+}
+
+cmd_setup() {
+  local python_bin
+  python_bin="$(command -v python3.13 || command -v python3 || true)"
+  [ -n "$python_bin" ] || die "python3.13 not found."
+  say "Creating virtualenv at .venv ($python_bin)"
+  "$python_bin" -m venv "$VENV"
+  "$VENV/bin/pip" install --quiet --upgrade pip
+  # Linuxbrew's Python hardcodes gcc-12 for C extensions (lru-dict); point it
+  # at a compiler that actually exists here.
+  local cc; cc="$(command -v gcc-13 || command -v gcc || echo cc)"
+  say "Installing toolchain (CC=$cc)"
+  CC="$cc" CXX="$(command -v g++-13 || command -v g++ || echo c++)" \
+    "$VENV/bin/pip" install --quiet -r "$REPO/requirements_test.txt"
+  say "Done. Try: scripts/dev check"
+}
+
+cmd_lint()  { need_venv; "$VENV/bin/ruff" check "$REPO"; }
+cmd_fmt()   { need_venv; "$VENV/bin/ruff" check --fix "$REPO"; }
+cmd_types() { need_venv; "$PY" -m mypy custom_components/waterscope tests; }
+cmd_test()  { need_venv; "$PY" -m pytest "$@"; }
+
+cmd_check() {
+  need_venv
+  say "ruff";   "$VENV/bin/ruff" check "$REPO"
+  say "mypy";   "$PY" -m mypy custom_components/waterscope tests
+  say "pytest"; "$PY" -m pytest -q
+  say "All checks passed"
+}
+
+write_config() {
+  mkdir -p "$HACFG/custom_components"
+  [ -f "$HACFG/configuration.yaml" ] && return 0
+  say "Seeding Home Assistant config at $HACFG"
+  cat > "$HACFG/configuration.yaml" <<'YAML'
+default_config:
+
+logger:
+  default: warning
+  logs:
+    custom_components.waterscope: debug
+    homeassistant.components.recorder.statistics: debug
+YAML
+}
+
+cmd_up() {
+  need_docker
+  write_config
+  docker image inspect "$IMAGE" >/dev/null 2>&1 || { say "Pulling $IMAGE"; docker pull "$IMAGE"; }
+  docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
+  say "Starting $CONTAINER (TZ=$TZ_NAME) on http://localhost:$PORT"
+  docker run -d --name "$CONTAINER" \
+    -v "$HACFG":/config \
+    -v "$REPO/custom_components/waterscope":/config/custom_components/waterscope:ro \
+    -e TZ="$TZ_NAME" \
+    -p "$PORT":8123 \
+    "$IMAGE" >/dev/null
+  say "Waiting for Home Assistant..."
+  local i=0
+  until curl -fsS -o /dev/null "http://localhost:$PORT/" 2>/dev/null || [ $i -ge 90 ]; do
+    sleep 2; i=$((i+1))
+  done
+  say "Ready: http://localhost:$PORT"
+}
+
+cmd_down()    { need_docker; docker rm -f "$CONTAINER" >/dev/null 2>&1 && say "Stopped" || say "Not running"; }
+cmd_restart() { need_docker; say "Restarting (picks up code changes)"; docker restart "$CONTAINER" >/dev/null; }
+cmd_logs()    { need_docker; docker logs -f "$CONTAINER" 2>&1 | grep --line-buffered -iE 'waterscope|error|traceback'; }
+
+cmd_hassfest() {
+  need_docker
+  # Copy out first: hassfest walks the whole tree and would validate every
+  # integration inside .venv otherwise.
+  local tmp; tmp="$(mktemp -d)"
+  cp -r "$REPO/custom_components" "$REPO/hacs.json" "$tmp/"
+  docker run --rm -v "$tmp":/github/workspace -e INPUT_PATH=/github/workspace \
+    ghcr.io/home-assistant/hassfest:latest
+  rm -rf "$tmp"
+}
+
+cmd_adopt() {
+  local src="${1:-}"
+  [ -n "$src" ] || die "Usage: scripts/dev adopt <path-to-existing-hacfg>"
+  [ -d "$src" ] || die "No such directory: $src"
+  [ -e "$HACFG" ] && die "$HACFG already exists; remove it first."
+  mkdir -p "$DEV_HOME"
+  say "Adopting $src -> $HACFG"
+  cp -r "$src" "$HACFG"
+  # The old symlink points at a path that means nothing inside the container.
+  rm -f "$HACFG/custom_components/waterscope"
+  say "Done. Run: scripts/dev up"
+}
+
+cmd_where() {
+  echo "repo:      $REPO"
+  echo "venv:      $VENV $([ -x "$PY" ] && echo '(ready)' || echo '(missing — run setup)')"
+  echo "ha config: $HACFG $([ -d "$HACFG" ] && echo '(exists)' || echo '(not created yet)')"
+  echo "url:       http://localhost:$PORT"
+  echo "timezone:  $TZ_NAME"
+}
+
+cmd_help() {
+  cat <<'USAGE'
+scripts/dev <command>
+
+Toolchain
+  setup            create .venv and install ruff, mypy, pytest harness
+  check            ruff + mypy + pytest (what CI runs)
+  test [args...]   pytest, e.g. scripts/dev test tests/test_api.py -k leak
+  lint | fmt       ruff check | ruff check --fix
+  types            mypy
+  hassfest         Home Assistant manifest/translation validation
+
+Live Home Assistant (Docker)
+  up               start HA with this integration mounted, on :8123
+  down             remove the container
+  restart          restart to pick up code changes
+  logs             follow the log, filtered to waterscope and errors
+
+Other
+  where            print the paths and URL in use
+  adopt <dir>      import an existing HA config directory
+
+The HA config lives outside the repo (it stores your password). Override with
+WATERSCOPE_DEV_CONFIG, the port with WATERSCOPE_DEV_PORT, the zone with
+WATERSCOPE_DEV_TZ.
+USAGE
+}
+
+case "${1:-help}" in
+  setup) shift; cmd_setup "$@" ;;
+  check) shift; cmd_check "$@" ;;
+  test) shift; cmd_test "$@" ;;
+  lint) shift; cmd_lint "$@" ;;
+  fmt) shift; cmd_fmt "$@" ;;
+  types) shift; cmd_types "$@" ;;
+  hassfest) shift; cmd_hassfest "$@" ;;
+  up) shift; cmd_up "$@" ;;
+  down) shift; cmd_down "$@" ;;
+  restart) shift; cmd_restart "$@" ;;
+  logs) shift; cmd_logs "$@" ;;
+  adopt) shift; cmd_adopt "$@" ;;
+  where) shift; cmd_where "$@" ;;
+  help|--help|-h) cmd_help ;;
+  *) die "Unknown command: $1 (try: scripts/dev help)" ;;
+esac

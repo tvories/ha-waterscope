@@ -1,0 +1,74 @@
+{
+  "entity": {
+    "sensor": {
+      "today": {
+        "default": "mdi:water"
+      },
+      "yesterday": {
+        "default": "mdi:water-outline"
+      },
+      "flow_rate": {
+        "default": "mdi:water-pump"
+      },
+      "last_reading": {
+        "default": "mdi:clock-outline"
+      },
+      "leak_rate": {
+        "default": "mdi:water-alert"
+      },
+      "temperature": {
+        "default": "mdi:thermometer"
+      },
+      "cycle_usage": {
+        "default": "mdi:water-circle"
+      },
+      "indoor_usage": {
+        "default": "mdi:home-water"
+      },
+      "irrigation_usage": {
+        "default": "mdi:sprinkler-variant"
+      },
+      "leak_usage": {
+        "default": "mdi:pipe-leak"
+      },
+      "cycle_budget": {
+        "default": "mdi:target"
+      },
+      "budget_used": {
+        "default": "mdi:gauge"
+      },
+      "daily_average": {
+        "default": "mdi:chart-line"
+      },
+      "daily_target": {
+        "default": "mdi:bullseye-arrow"
+      },
+      "budget_status": {
+        "default": "mdi:information-outline"
+      },
+      "cycle_start": {
+        "default": "mdi:calendar-start"
+      },
+      "cycle_end": {
+        "default": "mdi:calendar-end"
+      },
+      "cycle_day": {
+        "default": "mdi:calendar-today"
+      }
+    },
+    "binary_sensor": {
+      "leak": {
+        "default": "mdi:water-off",
+        "state": {
+          "on": "mdi:pipe-leak"
+        }
+      },
+      "low_temperature": {
+        "default": "mdi:snowflake-off",
+        "state": {
+          "on": "mdi:snowflake-alert"
+        }
+      }
+    }
+  }
+}

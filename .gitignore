@@ -1,0 +1,19 @@
+__pycache__/
+*.pyc
+.venv/
+*.jar
+scratch/
+
+# Local-only working notes for Claude Code sessions.
+# Contains account identifiers and reverse-engineering detail — never publish.
+MEMORY.md
+
+# Tooling caches
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Machine-local Claude Code settings
+.claude/settings.local.json

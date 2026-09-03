@@ -1,0 +1,126 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to WaterScope",
+        "description": "Sign in with the email address and password you use in the WaterScope app. Every meter on the account is added automatically.",
+        "data": {
+          "email": "Email",
+          "password": "Password"
+        },
+        "data_description": {
+          "email": "The email address you sign in to the WaterScope app with.",
+          "password": "Your WaterScope password. It is stored so the integration can renew its access token."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-enter your WaterScope password",
+        "description": "The password for {email} is no longer accepted.",
+        "data": {
+          "password": "Password"
+        },
+        "data_description": {
+          "password": "Your current WaterScope password."
+        }
+      },
+      "reconfigure": {
+        "title": "Update your WaterScope credentials",
+        "description": "Change the email address or password used for this account.",
+        "data": {
+          "email": "Email",
+          "password": "Password"
+        },
+        "data_description": {
+          "email": "The email address you sign in to the WaterScope app with.",
+          "password": "Your WaterScope password."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to WaterScope",
+      "invalid_auth": "Invalid email or password",
+      "no_meters": "No meters were found on this account",
+      "unknown": "Unexpected error"
+    },
+    "abort": {
+      "already_configured": "This WaterScope account is already configured",
+      "reauth_successful": "Re-authentication was successful",
+      "reconfigure_successful": "Credentials updated",
+      "wrong_account": "Those credentials are for a different WaterScope account"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "today": {
+        "name": "Water used today"
+      },
+      "yesterday": {
+        "name": "Water used yesterday"
+      },
+      "flow_rate": {
+        "name": "Flow rate"
+      },
+      "last_reading": {
+        "name": "Last reading"
+      },
+      "leak_rate": {
+        "name": "Leak rate"
+      },
+      "temperature": {
+        "name": "Minimum temperature"
+      },
+      "cycle_usage": {
+        "name": "Cycle usage"
+      },
+      "indoor_usage": {
+        "name": "Indoor usage"
+      },
+      "irrigation_usage": {
+        "name": "Irrigation usage"
+      },
+      "leak_usage": {
+        "name": "Leak usage"
+      },
+      "cycle_budget": {
+        "name": "Cycle budget"
+      },
+      "budget_used": {
+        "name": "Budget used"
+      },
+      "daily_average": {
+        "name": "Cycle daily average"
+      },
+      "daily_target": {
+        "name": "Daily target"
+      },
+      "budget_status": {
+        "name": "Budget status"
+      },
+      "cycle_start": {
+        "name": "Cycle start"
+      },
+      "cycle_end": {
+        "name": "Cycle end"
+      },
+      "cycle_day": {
+        "name": "Day of cycle"
+      }
+    },
+    "binary_sensor": {
+      "leak": {
+        "name": "Leak"
+      },
+      "low_temperature": {
+        "name": "Low temperature"
+      }
+    }
+  },
+  "exceptions": {
+    "cannot_connect": {
+      "message": "Could not reach WaterScope: {error}"
+    },
+    "invalid_auth": {
+      "message": "WaterScope rejected the stored credentials. Re-enter your password."
+    }
+  }
+}

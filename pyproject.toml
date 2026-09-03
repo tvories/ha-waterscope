@@ -1,0 +1,44 @@
+[tool.mypy]
+# Mirrors the settings Home Assistant core applies to its own integrations,
+# which is the bar the quality scale's strict-typing rule is measured against.
+python_version = "3.13"
+# custom_components/ is not a package, so tell mypy the repo root is the base
+# and the integration is always custom_components.waterscope.*
+explicit_package_bases = true
+namespace_packages = true
+mypy_path = "."
+check_untyped_defs = true
+disallow_incomplete_defs = true
+disallow_subclassing_any = true
+disallow_untyped_calls = true
+disallow_untyped_decorators = true
+disallow_untyped_defs = true
+enable_error_code = [
+    "ignore-without-code",
+    "redundant-self",
+    "truthy-iterable",
+]
+local_partial_types = true
+no_implicit_optional = true
+strict_equality = true
+warn_incomplete_stub = true
+warn_redundant_casts = true
+warn_return_any = true
+warn_unused_configs = true
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+# The test harness ships no py.typed marker.
+module = "pytest_homeassistant_custom_component.*"
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+# The recorder tests otherwise drown the output in SQLAlchemy statements.
+log_level = "WARNING"
+addopts = "--cov=custom_components.waterscope --cov-report=term-missing"
