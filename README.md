@@ -19,7 +19,8 @@ dashboard, with up to 90 days of history backfilled on first setup.
 
 Any water meter visible in the **WaterScope 2.0** consumer app
 (`com.waterscope.mobile`) on a residential account. Development and testing were done
-against a Metron Prism cellular register on a Town of Erie, Colorado account.
+against a Metron Prism cellular register (Spectrum PD) on a residential account with a
+municipal water utility.
 
 Meters are discovered from the account automatically; there are no IDs to look up. Each
 meter becomes its own device, and meters added to or removed from the account are picked
