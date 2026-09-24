@@ -20,6 +20,7 @@ Then open <http://localhost:8123>.
 | `scripts/dev lint` / `fmt` | `ruff check` / `ruff check --fix`. |
 | `scripts/dev types` | mypy, using Home Assistant core's own settings. |
 | `scripts/dev hassfest` | HA's manifest, icon and translation validation. |
+| `scripts/dev hacs` | HACS publishing validation. Needs the repo pushed — it checks GitHub metadata (description, topics, releases) as well as the file layout. |
 | `scripts/dev up` / `down` / `restart` | Manage the live Home Assistant container. |
 | `scripts/dev logs` | Follow the log, filtered to waterscope lines and errors. |
 | `scripts/dev where` | Print the paths, port and timezone in use. |

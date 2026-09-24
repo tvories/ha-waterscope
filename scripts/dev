@@ -111,6 +111,25 @@ cmd_hassfest() {
   rm -rf "$tmp"
 }
 
+cmd_hacs() {
+  need_docker
+  # HACS validates repository metadata via the GitHub API (description, topics,
+  # releases) as well as the file layout, so it needs a token and the repo to
+  # have been pushed.
+  local token; token="$(gh auth token 2>/dev/null || echo "${GITHUB_TOKEN:-}")"
+  [ -n "$token" ] || die "No GitHub token. Run: gh auth login"
+  local slug; slug="$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null || echo "")"
+  [ -n "$slug" ] || die "Could not determine the GitHub repository for this checkout."
+  say "Validating $slug as a HACS integration"
+  docker run --rm \
+    -v "$REPO":/github/workspace \
+    -e INPUT_CATEGORY=integration \
+    -e INPUT_GITHUB_TOKEN="$token" \
+    -e GITHUB_REPOSITORY="$slug" \
+    -e GITHUB_WORKSPACE=/github/workspace \
+    ghcr.io/hacs/action:main
+}
+
 cmd_adopt() {
   local src="${1:-}"
   [ -n "$src" ] || die "Usage: scripts/dev adopt <path-to-existing-hacfg>"
@@ -143,6 +162,7 @@ Toolchain
   lint | fmt       ruff check | ruff check --fix
   types            mypy
   hassfest         Home Assistant manifest/translation validation
+  hacs             HACS publishing validation (needs the repo pushed)
 
 Live Home Assistant (Docker)
   up               start HA with this integration mounted, on :8123
@@ -168,6 +188,7 @@ case "${1:-help}" in
   fmt) shift; cmd_fmt "$@" ;;
   types) shift; cmd_types "$@" ;;
   hassfest) shift; cmd_hassfest "$@" ;;
+  hacs) shift; cmd_hacs "$@" ;;
   up) shift; cmd_up "$@" ;;
   down) shift; cmd_down "$@" ;;
   restart) shift; cmd_restart "$@" ;;
