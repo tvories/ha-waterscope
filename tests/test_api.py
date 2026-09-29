@@ -121,6 +121,7 @@ async def test_meters_are_parsed(
                     "meterModel": "Prism",
                     "accountId": ACCOUNT_ID,
                     "isResidential": True,
+                    "address": " 1 Main St ",
                 },
                 {"meterNickName": "broken entry with no id"},
             ],
@@ -134,6 +135,7 @@ async def test_meters_are_parsed(
     assert meters[0].meter_id == METER_ID
     assert meters[0].nickname == "Spectrum PD"
     assert meters[0].is_residential is True
+    assert meters[0].address == "1 Main St"
 
 
 async def test_consumption_parsing_clamps_and_flags(

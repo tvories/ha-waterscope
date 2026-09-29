@@ -21,7 +21,14 @@ async def test_diagnostics_redact_credentials(
     config_entry: MockConfigEntry,
 ) -> None:
     """Diagnostics get pasted into public issues, so secrets must be redacted."""
+    from custom_components.waterscope.const import CONF_METER_NAMES
+
     config_entry.add_to_hass(hass)
+    # Keyed by meter ID, so the whole mapping must be redacted.
+    hass.config_entries.async_update_entry(
+        config_entry,
+        data={**config_entry.data, CONF_METER_NAMES: {METER_ID: "Main house"}},
+    )
     assert await hass.config_entries.async_setup(config_entry.entry_id)
     await hass.async_block_till_done()
 
@@ -33,6 +40,9 @@ async def test_diagnostics_redact_credentials(
     assert ACCOUNT_ID not in dumped
     # The meter id is the device serial number and identifies the property.
     assert METER_ID not in dumped
+
+    assert "Main house" not in dumped
+    assert result["entry"]["meter_names"] == "**REDACTED**"
 
     # The nickname commonly defaults to the meter id, so it is not emitted.
     assert "nickname" not in result["meters"][0]

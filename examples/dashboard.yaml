@@ -1,0 +1,263 @@
+# Metron WaterScope dashboard
+#
+# Built-in cards only — no HACS frontend plugins needed.
+#
+# Before pasting:
+#   1. Rename the WaterScope device to "Water Meter" (Settings → Devices &
+#      Services → Metron WaterScope → the device → pencil icon) and accept the
+#      offer to rename its entity IDs. Every entity below then matches.
+#   2. Replace 3750055 with your meter ID if it differs. It is fixed in the
+#      statistic ID and does not change when you rename the device.
+#
+# Paste into: Settings → Dashboards → Add dashboard → New dashboard from
+# scratch → open it → ⋮ → Edit dashboard → ⋮ → Raw configuration editor.
+
+title: Water
+views:
+  - title: Water
+    path: water
+    icon: mdi:water
+    type: sections
+    max_columns: 3
+    sections:
+
+      # ── Alerts: red when the meter sees anything ────────────────────────
+      - type: grid
+        cards:
+          - type: heading
+            heading: Alerts
+            icon: mdi:alert-circle-outline
+
+          - type: conditional
+            conditions:
+              - condition: state
+                entity: binary_sensor.water_meter_leak
+                state: "on"
+            card:
+              type: markdown
+              content: >
+                <ha-alert alert-type="error" title="Leak detected">
+                The meter is reporting an active leak at
+                **{{ (states('sensor.water_meter_leak_rate') | float(0) * 60) | round(1) }} gal/hr**.
+                </ha-alert>
+
+          - type: conditional
+            conditions:
+              - condition: numeric_state
+                entity: sensor.water_meter_leak_usage
+                above: 0
+            card:
+              type: markdown
+              content: >
+                <ha-alert alert-type="error" title="Leak water this billing cycle">
+                **{{ states('sensor.water_meter_leak_usage') | float(0) | round(0) | int }} gal**
+                attributed to leaks since
+                {{ as_timestamp(states('sensor.water_meter_cycle_start')) | timestamp_custom('%b %-d') }}.
+                </ha-alert>
+
+          - type: conditional
+            conditions:
+              - condition: state
+                entity: binary_sensor.water_meter_low_temperature
+                state: "on"
+            card:
+              type: markdown
+              content: >
+                <ha-alert alert-type="warning" title="Low temperature at the meter">
+                Daily low was {{ states('sensor.water_meter_minimum_temperature') }}°F — freeze risk.
+                </ha-alert>
+
+          - type: conditional
+            conditions:
+              - condition: state
+                entity: binary_sensor.water_meter_leak
+                state: "off"
+              - condition: numeric_state
+                entity: sensor.water_meter_leak_usage
+                below: 0.01
+              - condition: state
+                entity: binary_sensor.water_meter_low_temperature
+                state: "off"
+            card:
+              type: markdown
+              content: >
+                <ha-alert alert-type="success" title="All clear">
+                No leaks and no low-temperature warnings.
+                </ha-alert>
+
+      # ── Right now ───────────────────────────────────────────────────────
+      - type: grid
+        cards:
+          - type: heading
+            heading: Usage
+            icon: mdi:water-outline
+          - type: tile
+            entity: sensor.water_meter_water_used_yesterday
+            name: Yesterday
+            color: blue
+          - type: tile
+            entity: sensor.water_meter_water_used_today
+            name: Today
+            color: light-blue
+          - type: tile
+            entity: sensor.water_meter_flow_rate
+            name: Last flow rate
+            color: cyan
+          - type: tile
+            entity: sensor.water_meter_last_reading
+            name: Data through
+            color: grey
+          - type: markdown
+            content: >
+              Readings arrive in a daily batch about a day late, so **Today**
+              stays at 0 until it lands. **Data through** shows how current the
+              data really is.
+
+      # ── Billing cycle ───────────────────────────────────────────────────
+      - type: grid
+        cards:
+          - type: heading
+            heading: Billing cycle
+            icon: mdi:calendar-range
+          - type: gauge
+            entity: sensor.water_meter_budget_used
+            name: Budget used
+            min: 0
+            max: 300
+            needle: true
+            severity:
+              green: 0
+              yellow: 80
+              red: 100
+          - type: tile
+            entity: sensor.water_meter_cycle_usage
+            name: Used this cycle
+            color: blue
+          - type: tile
+            entity: sensor.water_meter_cycle_budget
+            name: Budget
+            color: green
+          - type: tile
+            entity: sensor.water_meter_cycle_daily_average
+            name: Daily average
+            color: blue
+          - type: tile
+            entity: sensor.water_meter_daily_target
+            name: Daily target
+            color: green
+          - type: tile
+            entity: sensor.water_meter_budget_status
+            name: Rate tier
+            color: orange
+          - type: tile
+            entity: sensor.water_meter_day_of_cycle
+            name: Day of cycle
+            color: grey
+
+      # ── Where the water went ────────────────────────────────────────────
+      - type: grid
+        cards:
+          - type: heading
+            heading: Where it went
+            icon: mdi:chart-pie
+          - type: markdown
+            content: >
+              {% set indoor = states('sensor.water_meter_indoor_usage') | float(0) %}
+              {% set irr = states('sensor.water_meter_irrigation_usage') | float(0) %}
+              {% set leak = states('sensor.water_meter_leak_usage') | float(0) %}
+              {% set total = [indoor + irr + leak, 1] | max %}
+              {% macro bar(pct) %}{{ '█' * (pct / 5) | round(0, 'ceil') | int }}{% endmacro %}
+              | | Gallons | Share | |
+              |:--|--:|--:|:--|
+              | 🏠 Indoor | {{ indoor | round(0) | int }} | {{ (indoor / total * 100) | round(0) | int }}% | {{ bar(indoor / total * 100) }} |
+              | 🌱 Irrigation | {{ irr | round(0) | int }} | {{ (irr / total * 100) | round(0) | int }}% | {{ bar(irr / total * 100) }} |
+              | {% if leak > 0 %}<font color="red">🚨 **Leak**</font>{% else %}💧 Leak{% endif %} | {% if leak > 0 %}<font color="red">**{{ leak | round(0) | int }}**</font>{% else %}0{% endif %} | {{ (leak / total * 100) | round(0) | int }}% | {% if leak > 0 %}<font color="red">{{ bar(leak / total * 100) }}</font>{% endif %} |
+
+              *This billing cycle, as split by WaterScope.*
+          - type: history-graph
+            title: Cycle totals over time
+            hours_to_show: 720
+            entities:
+              - entity: sensor.water_meter_indoor_usage
+                name: Indoor
+              - entity: sensor.water_meter_irrigation_usage
+                name: Irrigation
+              - entity: sensor.water_meter_leak_usage
+                name: Leak
+
+      # ── Graphs from the long-term statistics ────────────────────────────
+      - type: grid
+        column_span: 3
+        cards:
+          - type: heading
+            heading: History
+            icon: mdi:chart-bar
+          - type: statistics-graph
+            title: Daily usage — last 30 days
+            entities:
+              - entity: waterscope:water_3750055
+                name: Water
+            chart_type: bar
+            period: day
+            days_to_show: 30
+            stat_types:
+              - change
+            grid_options:
+              columns: full
+          - type: statistics-graph
+            title: Hourly usage — last 3 days
+            entities:
+              - entity: waterscope:water_3750055
+                name: Water
+            chart_type: bar
+            period: hour
+            days_to_show: 3
+            stat_types:
+              - change
+          - type: statistics-graph
+            title: Weekly usage
+            entities:
+              - entity: waterscope:water_3750055
+                name: Water
+            chart_type: bar
+            period: week
+            days_to_show: 90
+            stat_types:
+              - change
+          - type: statistics-graph
+            title: Monthly usage
+            entities:
+              - entity: waterscope:water_3750055
+                name: Water
+            chart_type: bar
+            period: month
+            days_to_show: 365
+            stat_types:
+              - change
+
+      # ── Meter health ────────────────────────────────────────────────────
+      - type: grid
+        cards:
+          - type: heading
+            heading: Meter
+            icon: mdi:gauge
+          - type: tile
+            entity: binary_sensor.water_meter_leak
+            name: Leak
+            color: red
+          - type: tile
+            entity: sensor.water_meter_leak_rate
+            name: Leak rate
+            color: red
+          - type: tile
+            entity: sensor.water_meter_minimum_temperature
+            name: Daily low temperature
+            color: deep-orange
+          - type: tile
+            entity: binary_sensor.water_meter_low_temperature
+            name: Freeze warning
+            color: indigo
+          - type: tile
+            entity: sensor.water_meter_cycle_end
+            name: Cycle ends
+            color: grey

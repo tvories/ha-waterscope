@@ -203,3 +203,23 @@ async def test_consumption_failures_during_a_poll(
         for flow in hass.config_entries.flow.async_progress()
     )
     assert reauth_started is expects_reauth
+
+
+async def test_chosen_name_names_the_device_and_entities(
+    hass: HomeAssistant, mock_client: AsyncMock, config_entry: MockConfigEntry
+) -> None:
+    """The name picked during setup becomes the device name and ID prefix."""
+    from custom_components.waterscope.const import CONF_METER_NAMES
+
+    config_entry.add_to_hass(hass)
+    hass.config_entries.async_update_entry(
+        config_entry,
+        data={**config_entry.data, CONF_METER_NAMES: {METER_ID: "Water meter"}},
+    )
+    assert await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, METER_ID)})
+    assert device is not None
+    assert device.name == "Water meter"
+    assert hass.states.get("sensor.water_meter_water_used_today") is not None

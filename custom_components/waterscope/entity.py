@@ -5,7 +5,7 @@ from __future__ import annotations
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import ATTRIBUTION, DOMAIN
+from .const import ATTRIBUTION, CONF_METER_NAMES, DOMAIN
 from .coordinator import MeterData, WaterscopeCoordinator
 
 
@@ -24,11 +24,16 @@ class WaterscopeEntity(CoordinatorEntity[WaterscopeCoordinator]):
         self._attr_unique_id = f"{meter_id}_{key}"
 
         meter = coordinator.data[meter_id].meter
+        # The name chosen during setup; meters that appeared on the account
+        # afterwards, and entries created before naming existed, fall back.
+        chosen: dict[str, str] = coordinator.config_entry.data.get(
+            CONF_METER_NAMES, {}
+        )
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, meter_id)},
             manufacturer="Metron",
             model=meter.model or "WaterScope",
-            name=meter.nickname,
+            name=chosen.get(meter_id) or meter.default_name,
             serial_number=meter_id,
         )
 

@@ -50,6 +50,13 @@ Then **Settings → Devices & Services → Add Integration → Metron WaterScope
 | **Email** | The email address you sign in to the WaterScope app with. |
 | **Password** | Your WaterScope password. It is stored in the config entry so the integration can renew its access token without prompting you. |
 
+After signing in you're asked to **name each meter**. The name labels the device and
+becomes the prefix of its entity IDs, so "Water meter" gives `sensor.water_meter_…`. The
+suggestion is your nickname from the WaterScope app if you set one, otherwise "Water
+meter" — or, if the account has several meters, each meter's service address, so you can
+tell them apart. Meters that appear on the account later are named the same way
+automatically. You can rename any device afterwards from its device page.
+
 One config entry covers the whole account, so you only enter your credentials once no
 matter how many meters you have.
 
@@ -103,14 +110,14 @@ automation:
   - alias: "Water leak detected"
     triggers:
       - trigger: state
-        entity_id: binary_sensor.spectrum_pd_leak
+        entity_id: binary_sensor.water_meter_leak
         to: "on"
     actions:
       - action: notify.persistent_notification
         data:
           message: >-
             WaterScope reports a leak at
-            {{ states('sensor.spectrum_pd_leak_rate') }} gal/min.
+            {{ states('sensor.water_meter_leak_rate') }} gal/min.
 ```
 
 Warn before blowing the utility's budget:
@@ -120,14 +127,14 @@ automation:
   - alias: "Water budget nearly spent"
     triggers:
       - trigger: numeric_state
-        entity_id: sensor.spectrum_pd_budget_used
+        entity_id: sensor.water_meter_budget_used
         above: 90
     actions:
       - action: notify.persistent_notification
         data:
           message: >-
-            {{ states('sensor.spectrum_pd_budget_used') }}% of the water budget
-            used ({{ states('sensor.spectrum_pd_budget_status') }}).
+            {{ states('sensor.water_meter_budget_used') }}% of the water budget
+            used ({{ states('sensor.water_meter_budget_status') }}).
 ```
 
 Catch a freeze risk at the meter:
@@ -137,13 +144,13 @@ automation:
   - alias: "Meter temperature low"
     triggers:
       - trigger: state
-        entity_id: binary_sensor.spectrum_pd_low_temperature
+        entity_id: binary_sensor.water_meter_low_temperature
         to: "on"
     actions:
       - action: notify.persistent_notification
         data:
           message: "Meter low temperature reported ({{
-            states('sensor.spectrum_pd_minimum_temperature') }}°F daily low)."
+            states('sensor.water_meter_minimum_temperature') }}°F daily low)."
 ```
 
 ### Cycle usage may briefly disagree with the web dashboard

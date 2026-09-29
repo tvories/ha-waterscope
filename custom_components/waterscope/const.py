@@ -8,6 +8,11 @@ from typing import Final
 DOMAIN: Final = "waterscope"
 
 CONF_ACCOUNT_ID: Final = "account_id"
+# {meter_id: name} chosen by the user during setup.
+CONF_METER_NAMES: Final = "meter_names"
+
+# Used when the owner never set a nickname in the WaterScope app.
+DEFAULT_METER_NAME: Final = "Water meter"
 
 # WaterScope 2.0 mobile API (reverse-engineered from com.waterscope.mobile).
 API_BASE: Final = "https://webapi.waterscope.us"

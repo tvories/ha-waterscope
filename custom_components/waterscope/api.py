@@ -27,6 +27,7 @@ from .const import (
     API_BASE,
     BUDGET_CYCLE_PATH,
     CONSUMPTION_PATH,
+    DEFAULT_METER_NAME,
     METER_LIST_PATH,
     REQUEST_CHUNK_DAYS,
     TOKEN_EXPIRY_MARGIN,
@@ -59,6 +60,21 @@ class Meter:
     model: str
     account_id: str
     is_residential: bool
+    # Service address as Metron stores it — truncated to a fixed width, and
+    # personal data, so it must never reach diagnostics.
+    address: str = ""
+
+    @property
+    def default_name(self) -> str:
+        """Return the owner's nickname if they set one, else a generic name.
+
+        Metron fills an unset nickname with the meter ID, which makes a poor
+        device name and an unreadable entity ID prefix (``sensor.3750055_…``).
+        """
+        nickname = self.nickname.strip()
+        if nickname and nickname != self.meter_id:
+            return nickname
+        return DEFAULT_METER_NAME
 
 
 @dataclass(slots=True)
@@ -271,6 +287,7 @@ class WaterscopeClient:
                     model=str(m.get("meterModel") or ""),
                     account_id=str(m.get("accountId") or self.account_id or ""),
                     is_residential=bool(m.get("isResidential")),
+                    address=str(m.get("address") or "").strip(),
                 )
             )
         return meters

@@ -13,6 +13,16 @@
           "password": "Your WaterScope password. It is stored so the integration can renew its access token."
         }
       },
+      "name": {
+        "title": "Name your water meter",
+        "description": "Meter {meter_id} ({model}){location}. The name labels the device and becomes the prefix of its entity IDs \u2014 \"Water meter\" gives `sensor.water_meter_\u2026`.",
+        "data": {
+          "name": "Name"
+        },
+        "data_description": {
+          "name": "You can rename the device later from its device page."
+        }
+      },
       "reauth_confirm": {
         "title": "Re-enter your WaterScope password",
         "description": "The password for {email} is no longer accepted.",
@@ -40,7 +50,8 @@
       "cannot_connect": "Failed to connect to WaterScope",
       "invalid_auth": "Invalid email or password",
       "no_meters": "No meters were found on this account",
-      "unknown": "Unexpected error"
+      "unknown": "Unexpected error",
+      "name_required": "Enter a name"
     },
     "abort": {
       "already_configured": "This WaterScope account is already configured",

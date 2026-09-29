@@ -23,7 +23,7 @@
         "default": "mdi:water-circle"
       },
       "indoor_usage": {
-        "default": "mdi:home-water"
+        "default": "mdi:faucet"
       },
       "irrigation_usage": {
         "default": "mdi:sprinkler-variant"

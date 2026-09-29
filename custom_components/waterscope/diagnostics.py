@@ -10,13 +10,14 @@ from homeassistant.components.diagnostics import async_redact_data
 from homeassistant.const import CONF_EMAIL, CONF_PASSWORD
 from homeassistant.core import HomeAssistant
 
-from .const import CONF_ACCOUNT_ID
+from .const import CONF_ACCOUNT_ID, CONF_METER_NAMES
 from .coordinator import WaterscopeConfigEntry
 
 # Downloaded diagnostics get pasted into public issue reports. The meter list
 # also carries the service address, account holder name and consumer id, so
 # nothing derived from that payload may be emitted verbatim.
-TO_REDACT = {CONF_PASSWORD, CONF_EMAIL, CONF_ACCOUNT_ID}
+# meter_names is keyed by meter ID, the device serial number.
+TO_REDACT = {CONF_PASSWORD, CONF_EMAIL, CONF_ACCOUNT_ID, CONF_METER_NAMES}
 
 
 async def async_get_config_entry_diagnostics(
