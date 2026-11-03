@@ -5,6 +5,7 @@ set -euo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VENV="$REPO/.venv"
 PY="$VENV/bin/python"
+PYTHON_VERSION="3.14"
 CONTAINER="ha-waterscope-test"
 IMAGE="ghcr.io/home-assistant/home-assistant:stable"
 PORT="${WATERSCOPE_DEV_PORT:-8123}"
@@ -33,18 +34,22 @@ need_venv() {
 }
 
 cmd_setup() {
-  local python_bin
-  python_bin="$(command -v python3.13 || command -v python3 || true)"
-  [ -n "$python_bin" ] || die "python3.13 not found."
-  say "Creating virtualenv at .venv ($python_bin)"
-  "$python_bin" -m venv "$VENV"
-  "$VENV/bin/pip" install --quiet --upgrade pip
-  # Linuxbrew's Python hardcodes gcc-12 for C extensions (lru-dict); point it
-  # at a compiler that actually exists here.
-  local cc; cc="$(command -v gcc-13 || command -v gcc || echo cc)"
-  say "Installing toolchain (CC=$cc)"
-  CC="$cc" CXX="$(command -v g++-13 || command -v g++ || echo c++)" \
+  # The test harness tracks current Home Assistant, which needs Python 3.14.
+  if command -v uv >/dev/null 2>&1; then
+    say "Creating virtualenv at .venv with uv (Python $PYTHON_VERSION)"
+    uv venv --clear --python "$PYTHON_VERSION" "$VENV"
+    say "Installing toolchain"
+    uv pip install --quiet --python "$PY" -r "$REPO/requirements_test.txt"
+  else
+    local python_bin
+    python_bin="$(command -v "python$PYTHON_VERSION" || true)"
+    [ -n "$python_bin" ] || die "Python $PYTHON_VERSION not found. Install it, or install uv."
+    say "Creating virtualenv at .venv ($python_bin)"
+    "$python_bin" -m venv --clear "$VENV"
+    "$VENV/bin/pip" install --quiet --upgrade pip
+    say "Installing toolchain"
     "$VENV/bin/pip" install --quiet -r "$REPO/requirements_test.txt"
+  fi
   say "Done. Try: scripts/dev check"
 }
 

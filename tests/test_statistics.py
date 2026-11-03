@@ -147,18 +147,27 @@ async def test_missing_intervals_are_excluded(
 async def test_failed_import_leaves_the_series_untouched(
     hass: HomeAssistant, mock_client: AsyncMock, config_entry: MockConfigEntry
 ) -> None:
-    """If history cannot be fetched, nothing is written and setup still succeeds."""
+    """If history cannot be fetched, nothing is written and setup still succeeds.
+
+    Only the backfill request reaches back further than a couple of days, so
+    failing exactly that one isolates the initial import from the regular poll.
+    """
     from custom_components.waterscope.api import WaterscopeConnectionError
 
-    config_entry.add_to_hass(hass)
-    assert await hass.config_entries.async_setup(config_entry.entry_id)
-    await hass.async_block_till_done()
+    from .conftest import build_readings
+
+    def _backfill_fails(meter_id: str, start: Any, end: Any) -> list[Any]:
+        if (dt_util.now().date() - start).days > 2:
+            raise WaterscopeConnectionError("down")
+        return build_readings(start, end)
+
+    mock_client.async_get_consumption.side_effect = _backfill_fails
+    await _setup(hass, config_entry)
 
     coordinator = config_entry.runtime_data
-    mock_client.async_get_consumption.side_effect = WaterscopeConnectionError("down")
-
-    await coordinator.async_import_statistics()
-    await hass.async_block_till_done()
-
-    # The gate stays shut so a later attempt can still import from scratch.
+    # Setup succeeded and the sensors still work...
+    assert coordinator.last_update_success is True
+    # ...but the gate stays shut, so a later setup can import from scratch,
     assert coordinator._statistics_ready.is_set() is False
+    # and nothing was written.
+    assert await _get_statistics(hass) == []

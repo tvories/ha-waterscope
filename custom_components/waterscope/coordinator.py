@@ -319,9 +319,9 @@ class WaterscopeCoordinator(DataUpdateCoordinator[dict[str, MeterData]]):
             }
             if meter_ids and not meter_ids & current:
                 _LOGGER.debug("Removing stale WaterScope device %s", device.name)
-                registry.async_update_device(
-                    device.id, remove_config_entry_id=entry_id
-                )
+                # A device belongs to one config entry, so removing it outright
+                # replaces the deprecated remove_config_entry_id path.
+                registry.async_remove_device(device.id)
 
 
 def _summarise(

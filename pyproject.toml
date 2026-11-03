@@ -1,6 +1,9 @@
 [tool.mypy]
 # Mirrors the settings Home Assistant core applies to its own integrations,
 # which is the bar the quality scale's strict-typing rule is measured against.
+# The toolchain runs on 3.14 (the test harness requires it), but the minimum
+# supported Home Assistant, 2026.2, runs on 3.13. Checking against 3.13 catches
+# 3.14-only syntax before it reaches an older install.
 python_version = "3.13"
 # custom_components/ is not a package, so tell mypy the repo root is the base
 # and the integration is always custom_components.waterscope.*

@@ -19,6 +19,15 @@ from custom_components.waterscope.const import DOMAIN
 from .conftest import METER, METER_ID, SECOND_METER
 
 
+def _device(
+    hass: HomeAssistant, entry: MockConfigEntry, meter_id: str
+) -> dr.DeviceEntry | None:
+    """Look up a meter's device, scoped to its config entry."""
+    return dr.async_get(hass).async_get_device_by_identifier(
+        (DOMAIN, meter_id), entry.entry_id
+    )
+
+
 async def test_setup_and_unload(
     hass: HomeAssistant, mock_client: AsyncMock, config_entry: MockConfigEntry
 ) -> None:
@@ -30,8 +39,7 @@ async def test_setup_and_unload(
     loaded_state = config_entry.state
     assert loaded_state is ConfigEntryState.LOADED
 
-    registry = dr.async_get(hass)
-    device = registry.async_get_device(identifiers={(DOMAIN, METER_ID)})
+    device = _device(hass, config_entry, METER_ID)
     assert device is not None
     assert device.manufacturer == "Metron"
     assert device.name == METER.nickname
@@ -80,20 +88,14 @@ async def test_new_meter_is_added_dynamically(
     assert await hass.config_entries.async_setup(config_entry.entry_id)
     await hass.async_block_till_done()
 
-    registry = dr.async_get(hass)
-    assert (
-        registry.async_get_device(identifiers={(DOMAIN, SECOND_METER.meter_id)}) is None
-    )
+    assert _device(hass, config_entry, SECOND_METER.meter_id) is None
 
     mock_client.async_get_meters.return_value = [METER, SECOND_METER]
     coordinator = config_entry.runtime_data
     await coordinator.async_refresh()
     await hass.async_block_till_done()
 
-    assert (
-        registry.async_get_device(identifiers={(DOMAIN, SECOND_METER.meter_id)})
-        is not None
-    )
+    assert _device(hass, config_entry, SECOND_METER.meter_id) is not None
     assert hass.states.get("sensor.back_yard_water_used_today") is not None
 
 
@@ -106,21 +108,15 @@ async def test_removed_meter_device_is_detached(
     assert await hass.config_entries.async_setup(config_entry.entry_id)
     await hass.async_block_till_done()
 
-    registry = dr.async_get(hass)
-    assert (
-        registry.async_get_device(identifiers={(DOMAIN, SECOND_METER.meter_id)})
-        is not None
-    )
+    assert _device(hass, config_entry, SECOND_METER.meter_id) is not None
 
     mock_client.async_get_meters.return_value = [METER]
     coordinator = config_entry.runtime_data
     await coordinator.async_refresh()
     await hass.async_block_till_done()
 
-    assert (
-        registry.async_get_device(identifiers={(DOMAIN, SECOND_METER.meter_id)}) is None
-    )
-    assert registry.async_get_device(identifiers={(DOMAIN, METER_ID)}) is not None
+    assert _device(hass, config_entry, SECOND_METER.meter_id) is None
+    assert _device(hass, config_entry, METER_ID) is not None
 
 
 @pytest.mark.parametrize(
@@ -162,7 +158,7 @@ async def test_manual_device_removal_is_allowed_only_for_gone_meters(
     await hass.async_block_till_done()
 
     registry = dr.async_get(hass)
-    live = registry.async_get_device(identifiers={(DOMAIN, METER_ID)})
+    live = _device(hass, config_entry, METER_ID)
     assert live is not None
     assert not await async_remove_config_entry_device(hass, config_entry, live)
 
@@ -219,7 +215,7 @@ async def test_chosen_name_names_the_device_and_entities(
     assert await hass.config_entries.async_setup(config_entry.entry_id)
     await hass.async_block_till_done()
 
-    device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, METER_ID)})
+    device = _device(hass, config_entry, METER_ID)
     assert device is not None
     assert device.name == "Water meter"
     assert hass.states.get("sensor.water_meter_water_used_today") is not None

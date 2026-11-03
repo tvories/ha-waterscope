@@ -6,7 +6,13 @@ import logging
 from collections.abc import Mapping
 from typing import Any
 
-import voluptuous as vol
+# Home Assistant validates with Probatio since 2026.9 and types its flow APIs
+# against it; older releases only ship voluptuous, which Probatio replaces
+# one-for-one.
+try:
+    import probatio as vol
+except ImportError:  # pragma: no cover - Home Assistant before 2026.9
+    import voluptuous as vol  # type: ignore[no-redef]
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
 from homeassistant.const import CONF_EMAIL, CONF_NAME, CONF_PASSWORD
 from homeassistant.helpers.aiohttp_client import async_create_clientsession

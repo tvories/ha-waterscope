@@ -75,22 +75,30 @@ root-owned. Copying it around needs `sudo`.
 
 - **Docker.** On WSL this needs Docker Desktop → Settings → Resources → WSL Integration
   switched on for this distro, otherwise `docker` is only an inert shim.
-- **Python 3.13+**, which is what Home Assistant requires.
+- **Python 3.14** for the toolchain. The test harness tracks current Home Assistant,
+  which requires it. `scripts/dev setup` uses [uv](https://docs.astral.sh/uv/) when it
+  is installed and lets uv fetch 3.14 if the system lacks it — the easy path on NixOS or
+  any distribution that ships an older Python. Without uv it needs `python3.14` on
+  `PATH`.
 
-## Two gotchas worth knowing
+## Supported Home Assistant versions
 
-**C extensions need a compiler that exists.** Linuxbrew's Python hardcodes `gcc-12` when
-building C extensions, and that compiler is not installed here — without an override,
-installing the toolchain fails while building the `lru-dict` wheel. `scripts/dev setup`
-detects `gcc-13` and sets `CC` accordingly. Any manual `pip install` into `.venv` that
-compiles C needs the same treatment.
+The integration supports Home Assistant **2026.2.0** and newer (`hacs.json`). Two
+releases in that range need care:
 
-**Test and runtime Home Assistant versions differ, by design.**
-`pytest-homeassistant-custom-component` pins its own Home Assistant (2026.2.3 at the time
-of writing) while the container runs `:stable` (2026.8.1). This was checked and is safe for
-the APIs in use — `StatisticMetaData`, `StatisticMeanType` and `VolumeConverter.UNIT_CLASS`
-are identical in both. Re-check it whenever the recorder statistics API is touched, since
-that is where the two versions are most likely to diverge.
+- **2026.2 runs on Python 3.13**, while the toolchain runs on 3.14. mypy is configured
+  with `python_version = "3.13"` so that 3.14-only syntax is caught before it breaks an
+  older install. Keep it there until the minimum moves past 2026.2.
+- **2026.9 replaced voluptuous with Probatio.** Home Assistant's flow APIs are now typed
+  against Probatio, which earlier releases do not ship, so `config_flow.py` imports
+  `probatio` and falls back to `voluptuous`. Both branches were checked by importing the
+  integration in the `2026.2.0` and current `stable` containers.
+
+The test harness, `pytest-homeassistant-custom-component`, pins its own Home Assistant —
+always the newest release — while `scripts/dev up` runs `:stable`. They usually match.
+Tests therefore only cover current Home Assistant; to check an older release, import the
+integration in that release's container, for example
+`ghcr.io/home-assistant/home-assistant:2026.2.0`.
 
 ## How it fits together
 
