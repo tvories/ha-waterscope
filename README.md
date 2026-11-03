@@ -101,6 +101,13 @@ hourly totals — this is what the Energy dashboard and the 90-day backfill use.
 meter's statistic. Backfilled history appears immediately, so the dashboard is useful the
 day you install it rather than a month later.
 
+### Example dashboard
+
+[`examples/dashboard.yaml`](examples/dashboard.yaml) is a ready-made dashboard tab using
+built-in cards only: leak alerts in red, the billing cycle against its budget, the
+indoor / irrigation / leak split, and daily, hourly, weekly and monthly usage charts. The
+instructions for adding it are at the top of the file.
+
 ### Example automations
 
 Alert when the meter itself reports a leak:
