@@ -108,6 +108,8 @@ built-in cards only: leak alerts in red, the billing cycle against its budget, t
 indoor / irrigation / leak split, and daily, hourly, weekly and monthly usage charts. The
 instructions for adding it are at the top of the file.
 
+![The example WaterScope dashboard](https://raw.githubusercontent.com/tvories/ha-waterscope/main/examples/dashboard.png)
+
 ### Example automations
 
 Alert when the meter itself reports a leak:
