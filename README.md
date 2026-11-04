@@ -1,5 +1,12 @@
 # Metron WaterScope for Home Assistant
 
+[![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/integration)
+[![GitHub Release](https://img.shields.io/github/v/release/tvories/ha-waterscope)](https://github.com/tvories/ha-waterscope/releases/latest)
+[![Validate](https://github.com/tvories/ha-waterscope/actions/workflows/validate.yml/badge.svg)](https://github.com/tvories/ha-waterscope/actions/workflows/validate.yml)
+[![Active installations](https://img.shields.io/badge/dynamic/json?color=41BDF5&logo=home-assistant&label=installations&suffix=%20active&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.waterscope.total)](https://analytics.home-assistant.io/custom_integrations.json)
+[![Home Assistant 2026.2+](https://img.shields.io/badge/Home%20Assistant-2026.2%2B-41BDF5?logo=home-assistant)](https://www.home-assistant.io/)
+[![License: MIT](https://img.shields.io/github/license/tvories/ha-waterscope)](LICENSE)
+
 Home Assistant integration for [Metron](https://metron-us.com/) smart water meters via the
 WaterScope 2.0 mobile API. Brings **1-minute resolution** water usage into the Energy
 dashboard, with up to 90 days of history backfilled on first setup.
@@ -46,7 +53,9 @@ with type **Integration**, then find **Metron WaterScope** and download it.
 **Manual** — copy `custom_components/waterscope` into your `config/custom_components/`
 and restart Home Assistant.
 
-Then **Settings → Devices & Services → Add Integration → Metron WaterScope**.
+Then **Settings → Devices & Services → Add Integration → Metron WaterScope**, or:
+
+[![Open your Home Assistant instance and start setting up Metron WaterScope.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=waterscope)
 
 ### Configuration
 
