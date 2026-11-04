@@ -34,9 +34,14 @@ legacy `com.waterscope.app` client.
 Requires Home Assistant **2026.2.0 or newer** — the statistics API this integration
 writes to changed shape in that release.
 
-**HACS** → three-dot menu → Custom repositories → add
-`https://github.com/tvories/ha-waterscope` with type **Integration** → then find
-**Metron WaterScope** in HACS, download it, and restart Home Assistant.
+**HACS (recommended)** — search for **Metron WaterScope** in HACS, download it, and
+restart Home Assistant. Or open it in HACS directly:
+
+[![Open your Home Assistant instance and open this repository inside HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=tvories&repository=ha-waterscope&category=integration)
+
+If it doesn't show up in search, add it as a custom repository instead: HACS →
+three-dot menu → Custom repositories → add `https://github.com/tvories/ha-waterscope`
+with type **Integration**, then find **Metron WaterScope** and download it.
 
 **Manual** — copy `custom_components/waterscope` into your `config/custom_components/`
 and restart Home Assistant.
